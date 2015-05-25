@@ -5,7 +5,7 @@ import java.util.Locale;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
-import model.tutorial_00_specialResources1.ModelKasse;
+import model.DriveThrough;
 import desmoj.core.simulator.Experiment;
 import desmoj.core.simulator.TimeInstant;
 import desmoj.extensions.visualization2d.animation.CmdGeneration;
@@ -19,17 +19,16 @@ public class Main {
 		URL iconDir;
 		CmdGeneration cmdGen;
 		try {
-			cmdFile = new File("").toURI().toURL();
+			cmdFile = new File("cmds/commands.cmds").toURI().toURL();
 			iconDir = new File("resource").toURI().toURL();
 			cmdGen = new CmdGeneration("cmds/commands.cmds", "log", iconDir);
 		} catch (MalformedURLException e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
 			System.out.println("error, aborting ...");
 			return;
 		}
 		// erzeuge Modell und Experiment
-		ModelKasse model = new ModelKasse(cmdGen);
+		DriveThrough model = new DriveThrough(cmdGen);
 		Experiment exp = new Experiment("DriveIn");
 		cmdGen.setStartStopTime(new TimeInstant(0, TimeUnit.SECONDS), new TimeInstant(1, TimeUnit.SECONDS), TimeZone.getDefault());
 		model.connectToExperiment(exp);
@@ -45,7 +44,7 @@ public class Main {
 //		 Nach dem Experiment: Gib Report aus und beende.
 		exp.report();
 		exp.finish();
-		ViewerFrame v = createViewer(cmdFile, iconDir);
+		createViewer(cmdFile, iconDir);
 	}
 	public static ViewerFrame createViewer(URL cmdFile, URL imagePath){
 
