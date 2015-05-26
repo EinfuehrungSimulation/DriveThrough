@@ -23,14 +23,13 @@ public class Main {
 			iconDir = new File("resource").toURI().toURL();
 			cmdGen = new CmdGeneration("cmds/commands.cmds", "log", iconDir);
 		} catch (MalformedURLException e) {
-			// TODO Auto-generated catch block
 			System.out.println("error, aborting ...");
 			return;
 		}
 		// erzeuge Modell und Experiment
 		DriveThrough model = new DriveThrough(cmdGen);
 		Experiment exp = new Experiment("DriveIn");
-		cmdGen.setStartStopTime(new TimeInstant(0, TimeUnit.SECONDS), new TimeInstant(1, TimeUnit.SECONDS), TimeZone.getDefault());
+		cmdGen.setStartStopTime(new TimeInstant(0, TimeUnit.SECONDS), new TimeInstant(360000, TimeUnit.SECONDS), TimeZone.getDefault());
 		model.connectToExperiment(exp);
 
 		// setze Experiment-Parameter
@@ -41,11 +40,13 @@ public class Main {
 		cmdGen.experimentStart(exp, 5.0);
 		// Beende CmdGeneration
 		cmdGen.close();
-//		 Nach dem Experiment: Gib Report aus und beende.
+		// Nach dem Experiment: Gib Report aus und beende.
 		exp.report();
 		exp.finish();
+		
 		createViewer(cmdFile, iconDir);
 	}
+	
 	public static ViewerFrame createViewer(URL cmdFile, URL imagePath){
 
 		ViewerFrame v = null;
