@@ -43,11 +43,7 @@ public class Cook extends Entity{
 
 		@Override
 		public void eventRoutine() {
-			resource = resources.getNeededResource();
-			if(resource>=0){
-				timeWhenFinished = resources.getCookingDuration();
-				cookingEvent.schedule(timeWhenFinished);
-			}else if(resources.needsResourceToBeCooked()){
+			if(resources.needsResourceToBeCooked()){
 				resource = resources.getResourceToCook();
 				timeWhenFinished = resources.generateResource(resource);
 				cookingEvent.schedule(timeWhenFinished);

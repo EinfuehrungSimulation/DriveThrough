@@ -28,7 +28,7 @@ public class Resources extends Entity{
 		resources = new ArrayList<CountAnimation>();
 		for(int i = 0; i<types; i++){
 			Position p = new Position((int) pos.getPoint().getX(), (int)  pos.getPoint().getY()+i*HEIGHT*2+HEIGHT);
-			CountAnimation resource = new CountAnimation(model, "Resource"+i, false, true);
+			CountAnimation resource = new CountAnimation(model, "Resource"+i, true, true);
 			resource.createAnimation(p,  new Form(new Dimension(HEIGHT/2, HEIGHT/2)), true);
 			resources.add(resource);
 		}
@@ -54,12 +54,13 @@ public class Resources extends Entity{
 				Cook c = getCookWhoCooks(resource);
 				if(c!=null)
 					return c.getTimeWhenFinished();
-				else 
-					return null;
+				else {
+					neededTime = creationTime.sampleTimeSpan();
+					TimeInstant timeWhenFinished = getDriveThrough().getCookingCooks().first().getTimeWhenFinished();
+					return new TimeInstant(timeWhenFinished.getTimeAsDouble() + neededTime.getTimeAsDouble());
+				}
 			}
-			
 		}
-		
 	}
 
 	private Cook getCookWhoCooks(int resource) {
@@ -78,6 +79,12 @@ public class Resources extends Entity{
 	}
 
 	public TimeInstant generateResource(int resource) {
+		if(neededResource>=0){
+			neededResource = -1;
+			TimeSpan t = neededTime;
+			neededTime = new TimeSpan(0);
+			return new TimeInstant(presentTime().getTimeAsDouble()+t.getTimeAsDouble());
+		}
 		CountAnimation min = resources.get(0);
 		for(CountAnimation count: resources)
 			if(count.getValue()<min.getValue())
@@ -87,19 +94,14 @@ public class Resources extends Entity{
 	}
 
 	public int getResourceToCook() {
+		if(neededResource>=0)
+			return neededResource;
 		int res=0;
 		int min = Integer.MAX_VALUE;
 		for(CountAnimation c: resources)
 			if(c.getValue()<min)
 				res = (int) c.getValue();
 		return res;
-	}
-
-	public boolean needsResourceToBeCooked() {
-		for(CountAnimation c: resources)
-			if(c.getValue()<MAX_RESOURCE_COUNT)
-				return true;
-		return false;
 	}
 
 	public TimeInstant getTimeTilProducedRecource(int resource) {
@@ -113,13 +115,16 @@ public class Resources extends Entity{
 		return new TimeInstant(min.getTimeWhenFinished().getTimeAsDouble()+neededTime.getTimeAsDouble());
 	}
 
-	public int getNeededResource() {
-		int res = neededResource;
-		neededResource = -1;
-		return res;
-	}
-
 	public TimeInstant getCookingDuration() {
 		return new TimeInstant(presentTime().getTimeAsDouble()+neededTime.getTimeAsDouble());
+	}
+
+	public boolean needsResourceToBeCooked() {
+		if(neededResource>=0)
+			return true;
+		else for(CountAnimation re:resources)
+			if(re.getValue()<MAX_RESOURCE_COUNT)
+				return true;
+		return false;
 	}
 }

@@ -18,7 +18,6 @@ import entity.kitchen.Cook;
 import entity.kitchen.Resources;
 import entity.schalter.AusgabeSchalter;
 import entity.schalter.BestellSchalter;
-import entity.schalter.Schalter;
 
 /**
  * Jede Kasse hat eine eigene Warteschlange
@@ -34,10 +33,10 @@ public class DriveThrough extends ModelAnimation {
 	private static final double BESTELLUNG_DAUER_MEAN = 145.0;
 	private static final int AUSGABE_CAPACITY = 7;
 	private static final double AUSGABE_DAUER_STDV = 80.0;
-	private static final double AUSGABE_DAUER_MEAN = 200.0;
+	private static final double AUSGABE_DAUER_MEAN = 150.0;
 	private static final int RESOURCE_COUNT = 5;
-	private static final double RESOURCE_CREATION_TIME_STDV = 400;
-	private static final double RESOURCE_CREATION_TIME_MEAN = 100;
+	private static final double RESOURCE_CREATION_TIME_STDV = 100;
+	private static final double RESOURCE_CREATION_TIME_MEAN = 500;
 	private static final int COOKS = 3;
 	private static final double AUTO_GENERATION_STDV = 50.0;
 	private static final double AUUTO_GENERATION_MEAN = 150.0;
@@ -61,9 +60,9 @@ public class DriveThrough extends ModelAnimation {
 
 	String[] cars = { "cars/car1.png", "cars/car2.png", "cars/car3.png" };
 
-	private Schalter bestellShalter;
+	private BestellSchalter bestellShalter;
 	private AutoGenerator generator;
-	private Schalter ausgabeShalter;
+	private AusgabeSchalter ausgabeShalter;
 	private Resources resources;
 	private Queue<Cook> cooks;
 	private Queue<Cook> cookingCooks;
@@ -103,12 +102,12 @@ public class DriveThrough extends ModelAnimation {
 
 		initKitchen();
 
-		ausgabeShalter = new AusgabeSchalter(this, "Ausgabe", null, new State(IDLE,
+		ausgabeShalter = new AusgabeSchalter(this, "Ausgabe", new State(IDLE,
 				AUSGABESCHALTER_ID, AUSGABESHALTER_IDLE_GIF), generator
 				.getEntity().getEntityTypeAnimation(), new Position(-WIDTH/2, 0),
 				AUSGABE_DAUER_MEAN, AUSGABE_DAUER_STDV, false,AUSGABE_CAPACITY);
 
-		bestellShalter = new BestellSchalter(this, "Bestellung", ausgabeShalter,
+		bestellShalter = new BestellSchalter(this, "Bestellung",
 				new State(IDLE, BESTELLSHALTER_ID, BESTELLSHALTER_IDLE_GIF),
 				generator.getEntity().getEntityTypeAnimation(), new Position(
 						50, -250), BESTELLUNG_DAUER_MEAN,BESTELLUNG_DAUER_STDV, true,BESTELLUNG_CAPACITY);
@@ -138,11 +137,11 @@ public class DriveThrough extends ModelAnimation {
 		generator.start(this);
 	}
 
-	public Schalter getBestellShalter() {
+	public BestellSchalter getBestellShalter() {
 		return bestellShalter;
 	}
 
-	public Schalter getAusgabeShalter() {
+	public AusgabeSchalter getAusgabeShalter() {
 		return ausgabeShalter;
 	}
 

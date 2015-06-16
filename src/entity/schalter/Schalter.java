@@ -1,13 +1,13 @@
 package entity.schalter;
 
 import java.awt.Color;
+import java.util.concurrent.TimeUnit;
 
 import model.DriveThrough;
 import model.State;
 import desmoj.core.dist.ContDistNormal;
 import desmoj.core.simulator.Entity;
 import desmoj.core.simulator.Event;
-import desmoj.core.simulator.TimeInstant;
 import desmoj.core.simulator.TimeSpan;
 import desmoj.extensions.visualization2d.animation.BackgroundElementAnimation;
 import desmoj.extensions.visualization2d.animation.Form;
@@ -20,47 +20,53 @@ import entity.car.Auto;
 
 public abstract class Schalter extends Entity{
 
-	protected QueueAnimation<Auto> queue;
-	protected CountAnimation 					rejected;
-	protected ContDistNormal 					wartezeit;
+	protected QueueAnimation<Auto>			queue;
+	protected CountAnimation 				rejected;
+	protected ContDistNormal 				wartezeit;
 	
 	private static final String 			BASE = "SHALTER";
 	private static final String 			NAME = "SHALTER";
 	private static int 						width = 600;
 	private DriveThrough 					owner;
-	private Schalter 						target;
 	private Position 						position;
 	private ProcessEvent 					beginEvent;
-	private DoAfterProcessedEvent 			endeEvent; 
+	public boolean targetIsFull; 
 	
 
-	public Schalter(DriveThrough owner, Schalter target, String name, State state,
+	public Schalter(DriveThrough owner, String name, State state,
 			EntityTypeAnimation entity, Position pos, double mean, double stdDev, boolean bHorizontal, int length){
 		super(owner, name, true);
-		this.target = target;
 		this.owner = owner;
 		this.position = pos;
-		this.endeEvent = new DoAfterProcessedEvent();
-		this.beginEvent = new ProcessEvent();
+		this.beginEvent = new ProcessEvent(name+"Event");
 		this.wartezeit = new ContDistNormal(owner, name+" Normalverteilung", mean, stdDev , true, true);
 		wartezeit.setNonNegative(true);
 		initAnimation(bHorizontal, length, entity);
 	}
 
 	/**
-	 * Perform Action and determine the Duration it takes to perform.
+	 * Perform action after time got consumed
+	 */
+	public abstract void doAfterCarProcessed(Auto auto);
+
+	/**
+	 * Perform actions before time get consumed. Determine the time to consume
+	 * @param auto
 	 * @return
 	 */
-	public abstract TimeInstant doAfterEntityProcessed(Auto auto);
+	public abstract TimeSpan process(Auto auto);
 	
-	public void insert(Auto auto) {
+	public void start(Auto auto){
+		beginEvent.schedule(auto, process(auto));
+	}
+	
+	public boolean insert(Auto auto) {
 		if(queue.isEmpty()){
 			queue.insert(auto);
-			beginEvent.eventRoutine(auto);
-		}else if(!queue.insert(auto)) {
-			rejected.update();
-			auto.disposeAnimation();
+			start(auto);
+			return true;
 		}
+		return 	queue.insert(auto);
 	}
 	
 	protected Position getPosition() {
@@ -70,46 +76,35 @@ public abstract class Schalter extends Entity{
 	public boolean isEmpty() {
 		return queue.isEmpty();
 	}
-
+	
+	public boolean isFull(){
+		return queue.maxLength()<=queue.size();
+	}
+	public String getName(){
+		return super.getName();
+	}
 	protected DriveThrough getDriveThrough() {
 		return owner;
 	}
 	
 	class ProcessEvent extends Event<Auto> {
 
-		public ProcessEvent() {
-			super(owner, "Bestellungs-Begin-Event", true);
+		public ProcessEvent(String name) {
+			super(owner, name, true);
 		}
 
 		@Override
 		public void eventRoutine(Auto auto) {
-			endeEvent.schedule(auto, wartezeit.sampleTimeSpan());
+			doAfterCarProcessed(auto);				
 		}
 	}
 
-	class DoAfterProcessedEvent extends Event<Auto>{
-
-
-		public DoAfterProcessedEvent() {
-			super(owner, "Bestellungs-Ende-Event", true);
-		}
-
-		@Override
-		public void eventRoutine(Auto auto) {
-			queue.remove(auto);
-			if(target!=null)
-				target.insert(auto);
-			if(!queue.isEmpty()){
-				TimeInstant t = doAfterEntityProcessed(auto);
-				if(t==null)
-					beginEvent.schedule(queue.first(),new TimeSpan(0.0));
-				else
-					beginEvent.schedule(queue.first(), t);
-			}
-		}
-		
+	
+	void reject(Auto auto){
+		rejected.update();
+		auto.disposeAnimation();
 	}
-
+	
 	private void initAnimation(boolean bHorizontal, int length, EntityTypeAnimation entity){
 		if(bHorizontal){
 			new BackgroundElementAnimation(
@@ -127,5 +122,9 @@ public abstract class Schalter extends Entity{
 				new Position(-350 + (int) Math.round(position.getPoint().getX()),
 						(int) Math.round(position.getPoint().getX())), new Form(20,
 						30), true);
+	}
+
+	public TimeSpan getRndTime() {
+		return wartezeit.sampleTimeSpan(TimeUnit.SECONDS);
 	}
 }
