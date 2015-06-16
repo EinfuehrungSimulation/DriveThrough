@@ -6,8 +6,8 @@ import java.util.concurrent.TimeUnit;
 
 import model.DriveThrough;
 import model.Manager;
-import model.State;
 import model.Manager.ShowInReport;
+import model.State;
 import desmoj.core.dist.ContDistNormal;
 import desmoj.core.dist.DiscreteDistUniform;
 import desmoj.core.simulator.ExternalEvent;
@@ -58,10 +58,13 @@ public class AutoGenerator{
 	public void init(DriveThrough owner) {
 		this.owner = owner;
 		accumulate = new Accumulate(owner, "Kunden Erstellung Gesamt", Manager.showInReport(ShowInReport.MINIMAL_REPORT), Manager.TRACE);
+		accumulate.setDescription("Zeitspanne zwischen zwei Kunden Erstellungsereignisen.");
 		this.histo = new Histogram(owner, "Kunden Erstellung", Manager.OPENING,Manager.CLOSING,Manager.CLOSING-Manager.OPENING, Manager.showInReport(ShowInReport.NORMAL_REPORT), Manager.TRACE);
+		this.histo.setDescription("Kundenerstellung ist abhängig von der Tageszeit und anderen externen Einflüssen.");
 		this.owner = owner;
 		this.colorSampler = new DiscreteDistUniform(owner, "Color Sampler", 0, images.length-1, Manager.showInReport(ShowInReport.EXTENDED_REPORT), Manager.TRACE);
 		this.defaultTimeSampler=new ContDistNormal(owner, "Kunden Erstellung", mean, standardDeviation,Manager.showInReport(ShowInReport.EXTENDED_REPORT), Manager.TRACE);
+		this.defaultTimeSampler.setDescription("Standard Zeitspanne die zwischen zwei Kunden erstellungen liegt.");
 		for(int i=0;i<scales.length;i++){
 			timeSamplers[i]=new ContDistNormal(owner, "Kunden Erstellung "+hours[2*i]+"-"+hours[2*i+1]+" Uhr", mean/scales[i], standardDeviation/scales[i], Manager.showInReport(ShowInReport.EXTENDED_REPORT), Manager.TRACE);
 			timeSamplers[i].setNonNegative(true);

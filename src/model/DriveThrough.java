@@ -90,35 +90,37 @@ public class DriveThrough extends ModelAnimation {
 
 		initKitchen();
 
-		Schalter.init(this);
+		Schalter.init(this,"Unzufriedene Kunden", new Position(-100, 0));
 		
 		wartePlatz = new WartePlatz(this, "Warteplatz", generator.getEntity()
-				.getEntityTypeAnimation(), new Position(50, -50), 0.0, 0.0,
+				.getEntityTypeAnimation(), new Position(-150, -150), Manager.WARTEPLATZ_DAUER_MEAN, Manager.WARTEPLATZ_DAUER_STDV,
 				true, Manager.WARTEPLAETZE);
 		
 		ausgabeShalter = new AusgabeSchalter(this, "Ausgabe", generator
-				.getEntity().getEntityTypeAnimation(), new Position(-WIDTH / 2,
+				.getEntity().getEntityTypeAnimation(), new Position(-WIDTH / 2+50,
 				0), Manager.AUSGABE_DAUER_MEAN, Manager.AUSGABE_DAUER_STDV,
 				false, Manager.AUSGABE_CAPACITY);
 
 		bestellShalter = new BestellSchalter(this, "Bestellung", generator
-				.getEntity().getEntityTypeAnimation(), new Position(50, -250),
+				.getEntity().getEntityTypeAnimation(), new Position(0, 250),
 				Manager.BESTELLUNG_DAUER_MEAN, Manager.BESTELLUNG_DAUER_STDV,
 				true, Manager.BESTELLUNG_CAPACITY);
 		generator.init(this);
 	}
 
 	private void initKitchen() {
-		resources = new Resources(this, new Position(WIDTH / 2, -HEIGHT / 2),
+		resources = new Resources(this, new Position(WIDTH / 2-50, -HEIGHT / 2),
 				Manager.RESOURCE_COUNT, Manager.RESOURCE_CREATION_TIME_MEAN,
 				Manager.RESOURCE_CREATION_TIME_STDV);
 
 		waitingCooks = new Queue<Cook>(this, "Unbeschäftigte Köche",
-				Manager.showInReport(ShowInReport.EXTENDED_REPORT),
+				Manager.showInReport(ShowInReport.NORMAL_REPORT),
 				Manager.TRACE);
+		waitingCooks.setDescription("Zeit in die Köche untätig sind");
 		cookingCooks = new Queue<Cook>(this, "Kochende Köche",
 				Manager.showInReport(ShowInReport.EXTENDED_REPORT),
 				Manager.TRACE);
+		cookingCooks.setDescription("Zeit in die Köche Kochen");
 
 		for (int i = 0; i < Manager.COOKS; i++) {
 			Cook c = new Cook(this, resources, "Koch" + i, true);

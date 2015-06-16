@@ -5,18 +5,18 @@ public class Manager {
 	//initialization values
 	
 	//-------------------Bestellung--------------------//
-	public static final int 				BESTELLUNG_CAPACITY 			= 10;
+	public static final int 				BESTELLUNG_CAPACITY 			= 7;
 	public static final double 				BESTELLUNG_DAUER_STDV 			= 20.0;
 	public static final double 				BESTELLUNG_DAUER_MEAN 			= 80.0;
 
 	//-------------------Ausgabe--------------------//
-	public static final int 				AUSGABE_CAPACITY 				= 7;
+	public static final int 				AUSGABE_CAPACITY 				= 5;
 	public static final double 				AUSGABE_DAUER_STDV 				= 80.0;
 	public static final double 				AUSGABE_DAUER_MEAN 				= 150.0;
 	public static final int 				WARTEPLAETZE 					= 3;
 
 	//-------------------Küche--------------------//
-	public static final int 				COOKS 							= 3;
+	public static final int 				COOKS 							= 4;
 	public static final int 				RESOURCE_LIMIT	 				= 5;
 	public static final int 				RESOURCE_COUNT 					= 5;
 	public static final double 				RESOURCE_CREATION_TIME_STDV		= 200;
@@ -43,8 +43,10 @@ public class Manager {
 	public static final String 				IDLE = "IDLE";
 	
 	//-------------------Flags--------------------//
-	public static final boolean 			TRACE 							= true;	
-	public static ShowInReport				SHOW_REPORT						= ShowInReport.EXTENDED_REPORT;
+	public static final boolean 			TRACE 							= true;
+	public static final double WARTEPLATZ_DAUER_MEAN 						= 10.0;
+	public static final double WARTEPLATZ_DAUER_STDV 						= 2.0;	
+	public static ShowInReport				SHOW_REPORT						= ShowInReport.NORMAL_REPORT;
 	
 	public static enum ShowInReport{
 		NO_REPORT(0), MINIMAL_REPORT(1), NORMAL_REPORT(2), EXTENDED_REPORT(3), DEBUG_REPORT(4);

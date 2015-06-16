@@ -12,6 +12,7 @@ import desmoj.core.simulator.Entity;
 import desmoj.core.simulator.Queue;
 import desmoj.core.simulator.TimeInstant;
 import desmoj.core.simulator.TimeSpan;
+import desmoj.core.statistic.Accumulate;
 import desmoj.core.statistic.Histogram;
 import desmoj.extensions.visualization2d.animation.Form;
 import desmoj.extensions.visualization2d.animation.Position;
@@ -25,28 +26,38 @@ public class Resources extends Entity{
 	private int neededResource;
 	private TimeSpan neededTime;
 	private Histogram histo;
+	private ArrayList<Accumulate> resourcenErstellt;
 	
 	public Resources(DriveThrough model, Position pos, int types, double meanCreationTime, double stDevCreationTime) {
 		super(model, "Resources", true);
 		resources = new ArrayList<CountAnimation>();
+		resourcenErstellt = new ArrayList<Accumulate>();
 		for(int i = 0; i<types; i++){
 			Position p = new Position((int) pos.getPoint().getX(), (int)  pos.getPoint().getY()+i*HEIGHT*2+HEIGHT);
 			CountAnimation resource = new CountAnimation(model, "Resource"+i, Manager.showInReport(ShowInReport.EXTENDED_REPORT), Manager.TRACE);
+			resource.setDescription("Wenn eine Ressource consumiert wird wird sie sofort entfernt, daher gibt es hier auch negative Werte.\n"
+					+ "Die Ressourcen-Limit ist: "+Manager.RESOURCE_LIMIT+".");
 			resource.createAnimation(p,  new Form(new Dimension(HEIGHT/2, HEIGHT/2)), true);
+			Accumulate accumulate = new Accumulate(model, "Resourcen Erstellt", Manager.showInReport(ShowInReport.NORMAL_REPORT), Manager.TRACE);
+			accumulate.setDescription("Informationen über den Resourcenstand");
+			resourcenErstellt.add(accumulate);
 			resources.add(resource);
 		}
 		neededResource=-1;
-		creationTime = new ContDistNormal(model, "Resource Erstellungsdauer", meanCreationTime, stDevCreationTime, Manager.showInReport(ShowInReport.MINIMAL_REPORT), Manager.TRACE);
+		creationTime = new ContDistNormal(model, "Nachschub Erstellungsdauer", meanCreationTime, stDevCreationTime, Manager.showInReport(ShowInReport.MINIMAL_REPORT), Manager.TRACE);
+		creationTime.setDescription("Dauer bis eine neue Ressource erstellt wird");
 		creationTime.setNonNegative(true);
 		histo = new Histogram(model, "Konsumierte Ressourcen", 1.0, (double)types-1,types-2,Manager.showInReport(ShowInReport.MINIMAL_REPORT), Manager.TRACE);
+		histo.setDescription("Ressouren die von Kunden konsumiert wurden");
 	}
 	
 	public TimeInstant consume(int resource){
 		CountAnimation res = resources.get(resource);
+		res.update(-1);
+		resourcenErstellt.get(resource).update(res.getValue());
+		histo.update(resource);
 		TimeInstant t;
 		if(res.getValue()>0){
-			res.update(-1);
-			histo.update(resource);
 			Queue<Cook> cooks = getDriveThrough().getCooks();
 			if(!cooks.isEmpty())
 				cooks.first().start();
@@ -95,11 +106,16 @@ public class Resources extends Entity{
 			neededTime = new TimeSpan(0);
 			return new TimeInstant(presentTime().getTimeAsDouble()+t.getTimeAsDouble());
 		}
-		CountAnimation min = resources.get(0);
-		for(CountAnimation count: resources)
-			if(count.getValue()<min.getValue())
-				min = count;
-		min.update();
+		int i = 0;
+		int min = 0;
+		for(CountAnimation count: resources){
+			if(count.getValue()<resources.get(min).getValue()){
+				min = i;
+			}
+			i++;
+		}
+		resources.get(min).update();
+		resourcenErstellt.get(min).update(resources.get(min).getValue());
 		
 		double t = creationTime.sampleTimeSpan(TimeUnit.SECONDS).getTimeAsDouble()+presentTime().getTimeAsDouble();
 		double timeTillOpen = getDriveThrough().getTimeSpanTillOpen().getTimeAsDouble();

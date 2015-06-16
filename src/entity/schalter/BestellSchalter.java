@@ -10,6 +10,7 @@ import entity.car.Auto;
 public class BestellSchalter extends Schalter {
 	
 	private boolean active = false;
+	private Auto auto;
 
 
 	public BestellSchalter(DriveThrough owner, String name,
@@ -30,17 +31,20 @@ public class BestellSchalter extends Schalter {
 		active = false;
 		AusgabeSchalter ausgabeShalter = getDriveThrough().getAusgabeShalter();
 		if(!ausgabeShalter.isFull()){	
+			this.auto = null;
 			ausgabeShalter.insert(auto);
 			if(!this.isEmpty())
 				this.start();
-		}
+		}else
+			this.auto = auto;
 	}
 	
 
-	public void activate(){
-		if(!active)
-			if(!isEmpty()){
+	public Auto activate(){
+		if(!active){
+			if(!isEmpty())
 				start();
-			}
+		}
+		return auto;
 	}
 }

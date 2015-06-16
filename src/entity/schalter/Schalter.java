@@ -10,6 +10,7 @@ import desmoj.core.dist.ContDistNormal;
 import desmoj.core.simulator.Entity;
 import desmoj.core.simulator.Event;
 import desmoj.core.simulator.TimeSpan;
+import desmoj.core.statistic.Count;
 import desmoj.core.statistic.Histogram;
 import desmoj.extensions.visualization2d.animation.Form;
 import desmoj.extensions.visualization2d.animation.FormExt;
@@ -21,7 +22,8 @@ import entity.car.Auto;
 
 public abstract class Schalter extends Entity{
 
-	protected CountAnimation 				rejected;
+	protected Count			 				rejected;
+	protected static CountAnimation			allRejected;
 	protected ContDistNormal 				wartezeit;
 
 	private QueueAnimation<Auto>			queue;
@@ -41,12 +43,20 @@ public abstract class Schalter extends Entity{
 		this.length = length;
 		this.beginEvent = new ProcessEvent(name+"Event");
 		this.wartezeit = new ContDistNormal(owner, name+" Normalverteilung", mean, stdDev , Manager.showInReport(ShowInReport.EXTENDED_REPORT), Manager.TRACE);
+		wartezeit.setDescription("Die standard Wartezeit in der Queue");
 		wartezeit.setNonNegative(true);
 		initAnimation(bHorizontal, length, entity);
 	}
 	
-	public static void init(DriveThrough owner){
+	public static void init(DriveThrough owner, String name, Position pos){
 		histo = new Histogram(owner, "Unzufriedene Kunden gesamt", Manager.OPENING,Manager.CLOSING,Manager.CLOSING-Manager.OPENING, Manager.showInReport(ShowInReport.MINIMAL_REPORT), Manager.TRACE);
+		histo.setDescription("Überblick über Kunden die das Drivethrough an einer beliebigen Stelle unzufrieden verlassen");
+		allRejected = new CountAnimation(owner, "Kunde verlässt "+name, Manager.showInReport(ShowInReport.NORMAL_REPORT), Manager.TRACE);
+		allRejected.setDescription("Dieser zähler enthält die anzahl der Kunden die den "+name+" unzufrieden verlassen.");
+		allRejected.createAnimation(
+				new Position(-350 + (int) Math.round(pos.getPoint().getX()),
+						(int) Math.round(pos.getPoint().getX())), new Form(20,
+						30), true);
 	}
 	/**
 	 * Perform action after time got consumed
@@ -63,7 +73,6 @@ public abstract class Schalter extends Entity{
 	public void start(){
 		Auto auto = queue.first();
 		TimeSpan processTime = process(auto);
-			auto.stopWaiting();
 			beginEvent.schedule(auto, processTime);
 	}
 
@@ -86,8 +95,7 @@ public abstract class Schalter extends Entity{
 	}
 	
 	public boolean isFull(){
-		boolean b = length<=queue.size();
-		return b;
+		return  queue.size()>=length;
 	}
 	public String getName(){
 		return super.getName();
@@ -110,10 +118,10 @@ public abstract class Schalter extends Entity{
 		}
 	}
 
-	
 	public void reject(Auto auto){
 		histo.update(presentTime().getTimeAsCalender().get(Calendar.HOUR_OF_DAY));
 		rejected.update();
+		allRejected.update();
 		if(queue.contains(auto))
 			queue.remove(auto);
 		auto.disposeAnimation();
@@ -122,11 +130,9 @@ public abstract class Schalter extends Entity{
 	private void initAnimation(boolean bHorizontal, int length, EntityTypeAnimation entity){
 		queue = new QueueAnimation<Auto>(owner, getName(), 0, length, Manager.showInReport(ShowInReport.MINIMAL_REPORT), Manager.TRACE);
 		queue.createAnimation(position, new FormExt(bHorizontal, length, entity.getId()), true);
-		rejected = new CountAnimation(owner, "Kunde verlässt "+getName(), Manager.showInReport(ShowInReport.NORMAL_REPORT), Manager.TRACE);
-		rejected.createAnimation(
-				new Position(-350 + (int) Math.round(position.getPoint().getX()),
-						(int) Math.round(position.getPoint().getX())), new Form(20,
-						30), true);
+		queue.setDescription("Simulation eines Schalters mit Warteschlange");
+		rejected = new Count(owner, "Kunde verlässt "+getName(), Manager.showInReport(ShowInReport.NORMAL_REPORT), Manager.TRACE);
+		rejected.setDescription("Dieser zähler enthält die anzahl der Kunden die den "+getName()+" unzufrieden verlassen.");
 	}
 
 	public TimeSpan getRndTime() {

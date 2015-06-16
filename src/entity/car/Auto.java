@@ -25,20 +25,23 @@ public class Auto extends EntityAnimation{
 	private static int id=0;
 	private boolean waiting;
 	private TimeInstant waitStart;
-	private TimeSpan timeWaited;
 	private int orderVal;
+	private boolean disposed = false;
 
 	public Auto(ModelAnimation owner) {
 		super(owner, NAME+id, true);
 		id++;
-		timeWaited = new TimeSpan(0);
 		orderVal = order.sample().intValue();
+		waitStart = presentTime();
 	}
 
 	public static void init(Model owner, long maxValue, double mean, double standardDeviation){
-		order = new DiscreteDistUniform(owner, "Order Distribution", 0, maxValue-1, Manager.showInReport(ShowInReport.NORMAL_REPORT), Manager.TRACE);
-		patience = new ContDistNormal(owner, NAME+id+patience, mean, standardDeviation, Manager.showInReport(ShowInReport.MINIMAL_REPORT), Manager.TRACE);
+		order = new DiscreteDistUniform(owner, "Kunden Bestellungsverteilung", 0, maxValue-1, Manager.showInReport(ShowInReport.EXTENDED_REPORT), Manager.TRACE);
+		order.setDescription("Gleichverteilung die die Bestellung der Kunden darstellt");
+		patience = new ContDistNormal(owner, "Kunden Geduld", mean, standardDeviation, Manager.showInReport(ShowInReport.MINIMAL_REPORT), Manager.TRACE);
+		patience.setDescription("Zeitspanne bevor der Kunde die Warteschlange unzufrieden verlässt");
 		waitingTime = new Accumulate(owner, NAME+" Wartezeit", Manager.showInReport(ShowInReport.MINIMAL_REPORT), Manager.TRACE);
+		waitingTime.setDescription("Gesamte Zeitspanne die im DriveIn verbracht wurde");
 	}
 	
 	public int getOrder() {
@@ -46,8 +49,6 @@ public class Auto extends EntityAnimation{
 	}
 
 	public void waitAt(Schalter schalter) {
-		waiting = true;
-		waitStart = presentTime();
 		new WaitingEvent(getModel()).schedule(schalter, patience.sampleTimeSpan(TimeUnit.MINUTES));
 	}
 	
@@ -61,7 +62,6 @@ public class Auto extends EntityAnimation{
 		public void eventRoutine(Schalter schalter) {
 			if(waiting&&schalter.contains(getAuto())){
 				schalter.reject(getAuto());
-				timeWaited = new TimeSpan(presentTime().getTimeAsDouble()-waitStart.getTimeAsDouble());
 			}
 		}
 	}
@@ -71,11 +71,14 @@ public class Auto extends EntityAnimation{
 	}
 	@Override
 	public void disposeAnimation() {
-		super.disposeAnimation();
-		waitingTime.update(timeWaited);
+		if(!disposed){
+			this.disposed = true;
+			super.disposeAnimation();
+			waitingTime.update(new TimeSpan(presentTime().getTimeAsDouble() - waitStart.getTimeAsDouble()));
+		}
 	}
 
-	public void stopWaiting() {
-		timeWaited = new TimeSpan(timeWaited.getTimeAsDouble()+presentTime().getTimeAsDouble()-waitStart.getTimeAsDouble());
+	public boolean isDisposed() {
+		return disposed;
 	}
 }

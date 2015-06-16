@@ -17,7 +17,11 @@ public class WartePlatz extends Schalter{
 
 	@Override
 	public void doAfterCarProcessed(Auto auto) {
-		auto.disposeAnimation();
+		 if(auto!=null)
+			 auto.disposeAnimation();
+		 if(!this.isEmpty()){
+				start();
+		}
 	}
 
 	@Override
