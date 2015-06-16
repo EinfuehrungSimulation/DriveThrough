@@ -29,14 +29,13 @@ public class Main {
 		// erzeuge Modell und Experiment
 		DriveThrough model = new DriveThrough(cmdGen);
 		Experiment exp = new Experiment("DriveIn");
-		cmdGen.setStartStopTime(new TimeInstant(0, TimeUnit.SECONDS), new TimeInstant(360000, TimeUnit.SECONDS), TimeZone.getDefault());
+		exp.setSeedGenerator(1234567890);
+		cmdGen.setStartStopTime(new TimeInstant(0, TimeUnit.HOURS), new TimeInstant(24, TimeUnit.HOURS), TimeZone.getDefault());
 		model.connectToExperiment(exp);
 
 		// setze Experiment-Parameter
 		exp.setShowProgressBar(true);
 		System.out.println("start ...");// start
-																		// the
-																		// experiment
 		cmdGen.experimentStart(exp, 5.0);
 		// Beende CmdGeneration
 		cmdGen.close();

@@ -1,31 +1,37 @@
 package model;
 
 import java.awt.Color;
+import java.awt.Dimension;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.concurrent.TimeUnit;
 
-import model.entity.Schalter;
-import model.entity.AutoTypeAnimation;
-import model.event.AutoGenerator;
+import model.Manager.ShowInReport;
+import desmoj.core.simulator.Queue;
+import desmoj.core.simulator.TimeSpan;
 import desmoj.extensions.visualization2d.animation.BackgroundElementAnimation;
 import desmoj.extensions.visualization2d.animation.CmdGeneration;
 import desmoj.extensions.visualization2d.animation.Form;
 import desmoj.extensions.visualization2d.animation.Position;
 import desmoj.extensions.visualization2d.animation.core.simulator.ModelAnimation;
 import desmoj.extensions.visualization2d.animation.internalTools.EntityTypeAnimation;
+import entity.car.Auto;
+import entity.car.AutoGenerator;
+import entity.car.AutoTypeAnimation;
+import entity.kitchen.Cook;
+import entity.kitchen.Resources;
+import entity.schalter.AusgabeSchalter;
+import entity.schalter.BestellSchalter;
+import entity.schalter.Schalter;
+import entity.schalter.WartePlatz;
 
 /**
  * Jede Kasse hat eine eigene Warteschlange
  * 
  * @author Christian
- *
+ * 
  */
 public class DriveThrough extends ModelAnimation {
-
-	private static final String BESTELLSHALTER_ID = "bestellung";
-	private static final String AUSGABESCHALTER_ID = "ausgabe";
-	private static final String BESTELLSHALTER_IDLE_GIF = "schalter/schalter1_idle.gif";
-	private static final String AUSGABESHALTER_IDLE_GIF = "schalter/schalter2_idle.gif";
-	private static final String IDLE = "IDLE";
 
 	private static int WIDTH = 800;
 	private static int HEIGHT = 600;
@@ -38,9 +44,13 @@ public class DriveThrough extends ModelAnimation {
 
 	String[] cars = { "cars/car1.png", "cars/car2.png", "cars/car3.png" };
 
-	private Schalter bestellShalter;
+	private BestellSchalter bestellShalter;
 	private AutoGenerator generator;
-	private Schalter ausgabeShalter;
+	private AusgabeSchalter ausgabeShalter;
+	private Resources resources;
+	private Queue<Cook> waitingCooks;
+	private Queue<Cook> cookingCooks;
+	private WartePlatz wartePlatz;
 
 	public DriveThrough(CmdGeneration cmdGen) {
 		super(null, "Drive In", cmdGen, true, true, true);
@@ -50,42 +60,75 @@ public class DriveThrough extends ModelAnimation {
 		this.setModelDate(new Date().toString());
 		this.setModelDescription(this.description());
 		this.setGeneratedBy(DriveThrough.class.getName());
-		this.addIcon(BESTELLSHALTER_ID, BESTELLSHALTER_IDLE_GIF);
-		this.addIcon(AUSGABESCHALTER_ID, AUSGABESHALTER_IDLE_GIF);
+		this.addIcon(Manager.BESTELLSHALTER_ID, Manager.BESTELLSHALTER_IDLE_GIF);
+		this.addIcon(Manager.AUSGABESCHALTER_ID,
+				Manager.AUSGABESHALTER_IDLE_GIF);
 
-		generator = new AutoGenerator(cars, 150.0, 50.0);
-
+		generator = new AutoGenerator(cars, Manager.TIME_SPANS,
+				Manager.TIME_SCALES, Manager.AUUTO_GENERATION_MEAN,
+				Manager.AUTO_GENERATION_STDV);
 		initEntityType(generator.getEntity());
-
 	}
 
 	public void initEntityType(AutoTypeAnimation entityType) {
 		for (int i = 0; i < entityType.states(); i++) {
-			this.addIcon(entityType.getState(i).getImageID(), entityType.getState(i)
-					.getImagePath());
+			this.addIcon(entityType.getState(i).getImageID(), entityType
+					.getState(i).getImagePath());
 		}
 		EntityTypeAnimation type = entityType.getEntityTypeAnimation();
 		this.addEntityTypeAnimation(type);
 	}
 
-
 	@Override
 	public void initAnimation() {
+
+		Auto.init(this, Manager.RESOURCE_COUNT, Manager.PATIENCE_MEAN,
+				Manager.PATIENCE_STDV);
 		new BackgroundElementAnimation(this, BASE, NAME, TEXT, 0, TEXT_SIZE, 0,
 				100.0, new Position(0, 0), new Form(WIDTH, HEIGHT), BG_COLOR,
 				FG_COLOR, true);
 
-		ausgabeShalter = new Schalter(this, "Ausgabe", null,  new State(IDLE,
-				AUSGABESCHALTER_ID, AUSGABESHALTER_IDLE_GIF), generator
-				.getEntity().getEntityTypeAnimation(), new Position(50, 250), 45.0, 20.0);
+		initKitchen();
 
-		bestellShalter = new Schalter(this, "Bestellung", ausgabeShalter, new State(IDLE,
-				BESTELLSHALTER_ID, BESTELLSHALTER_IDLE_GIF), generator
-				.getEntity().getEntityTypeAnimation(), new Position(50, -250), 145.0, 20.0);
+		Schalter.init(this,"Unzufriedene Kunden", new Position(-100, 0));
+		
+		wartePlatz = new WartePlatz(this, "Warteplatz", generator.getEntity()
+				.getEntityTypeAnimation(), new Position(-150, -150), Manager.WARTEPLATZ_DAUER_MEAN, Manager.WARTEPLATZ_DAUER_STDV,
+				true, Manager.WARTEPLAETZE);
+		
+		ausgabeShalter = new AusgabeSchalter(this, "Ausgabe", generator
+				.getEntity().getEntityTypeAnimation(), new Position(-WIDTH / 2+50,
+				0), Manager.AUSGABE_DAUER_MEAN, Manager.AUSGABE_DAUER_STDV,
+				false, Manager.AUSGABE_CAPACITY);
 
+		bestellShalter = new BestellSchalter(this, "Bestellung", generator
+				.getEntity().getEntityTypeAnimation(), new Position(0, 250),
+				Manager.BESTELLUNG_DAUER_MEAN, Manager.BESTELLUNG_DAUER_STDV,
+				true, Manager.BESTELLUNG_CAPACITY);
 		generator.init(this);
 	}
-	
+
+	private void initKitchen() {
+		resources = new Resources(this, new Position(WIDTH / 2-50, -HEIGHT / 2),
+				Manager.RESOURCE_COUNT, Manager.RESOURCE_CREATION_TIME_MEAN,
+				Manager.RESOURCE_CREATION_TIME_STDV);
+
+		waitingCooks = new Queue<Cook>(this, "Unbeschäftigte Köche",
+				Manager.showInReport(ShowInReport.NORMAL_REPORT),
+				Manager.TRACE);
+		waitingCooks.setDescription("Zeit in die Köche untätig sind");
+		cookingCooks = new Queue<Cook>(this, "Kochende Köche",
+				Manager.showInReport(ShowInReport.EXTENDED_REPORT),
+				Manager.TRACE);
+		cookingCooks.setDescription("Zeit in die Köche Kochen");
+
+		for (int i = 0; i < Manager.COOKS; i++) {
+			Cook c = new Cook(this, resources, "Koch" + i, true);
+			waitingCooks.insert(c);
+			c.start();
+		}
+	}
+
 	@Override
 	public String description() {
 		return "Model of a Drive In";
@@ -96,12 +139,44 @@ public class DriveThrough extends ModelAnimation {
 		generator.start(this);
 	}
 
-	public Schalter getBestellShalter() {
+	public BestellSchalter getBestellShalter() {
 		return bestellShalter;
 	}
 
-	public Schalter getAusgabeShalter() {
+	public AusgabeSchalter getAusgabeShalter() {
 		return ausgabeShalter;
+	}
+
+	public Dimension getDimension() {
+		return new Dimension(WIDTH, HEIGHT);
+	}
+
+	public Resources getResources() {
+		return resources;
+	}
+
+	public Queue<Cook> getCooks() {
+		return waitingCooks;
+	}
+
+	public Queue<Cook> getCookingCooks() {
+		return cookingCooks;
+	}
+
+	public TimeSpan getTimeSpanTillOpen() {
+		int hourOfDay = presentTime().getTimeAsCalender().get(
+				Calendar.HOUR_OF_DAY);
+		if (hourOfDay < Manager.OPENING)
+			return new TimeSpan(Manager.OPENING - hourOfDay, TimeUnit.HOURS);
+		else if (hourOfDay > Manager.CLOSING)
+			return new TimeSpan(24 - Manager.CLOSING + Manager.OPENING,
+					TimeUnit.HOURS);
+		else
+			return new TimeSpan(0);
+	}
+
+	public WartePlatz getWartePlatz() {
+		return wartePlatz;
 	}
 
 }// end class
