@@ -29,7 +29,8 @@ public class Main {
 		// erzeuge Modell und Experiment
 		DriveThrough model = new DriveThrough(cmdGen);
 		Experiment exp = new Experiment("DriveIn");
-		cmdGen.setStartStopTime(new TimeInstant(0, TimeUnit.HOURS), new TimeInstant(12, TimeUnit.HOURS), TimeZone.getDefault());
+		exp.setSeedGenerator(1234567890);
+		cmdGen.setStartStopTime(new TimeInstant(0, TimeUnit.HOURS), new TimeInstant(24, TimeUnit.HOURS), TimeZone.getDefault());
 		model.connectToExperiment(exp);
 
 		// setze Experiment-Parameter

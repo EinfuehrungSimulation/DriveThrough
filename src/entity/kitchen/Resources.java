@@ -5,11 +5,14 @@ import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
 import model.DriveThrough;
+import model.Manager;
+import model.Manager.ShowInReport;
 import desmoj.core.dist.ContDistNormal;
 import desmoj.core.simulator.Entity;
 import desmoj.core.simulator.Queue;
 import desmoj.core.simulator.TimeInstant;
 import desmoj.core.simulator.TimeSpan;
+import desmoj.core.statistic.Histogram;
 import desmoj.extensions.visualization2d.animation.Form;
 import desmoj.extensions.visualization2d.animation.Position;
 import desmoj.extensions.visualization2d.animation.core.statistic.CountAnimation;
@@ -17,50 +20,57 @@ import desmoj.extensions.visualization2d.animation.core.statistic.CountAnimation
 public class Resources extends Entity{
 
 	private static final int HEIGHT = 50;
-	private final int MAX_RESOURCE_COUNT = 3;
 	private ContDistNormal creationTime;
 	private ArrayList<CountAnimation> resources;
 	private int neededResource;
 	private TimeSpan neededTime;
+	private Histogram histo;
 	
 	public Resources(DriveThrough model, Position pos, int types, double meanCreationTime, double stDevCreationTime) {
 		super(model, "Resources", true);
 		resources = new ArrayList<CountAnimation>();
 		for(int i = 0; i<types; i++){
 			Position p = new Position((int) pos.getPoint().getX(), (int)  pos.getPoint().getY()+i*HEIGHT*2+HEIGHT);
-			CountAnimation resource = new CountAnimation(model, "Resource"+i, true, true);
+			CountAnimation resource = new CountAnimation(model, "Resource"+i, Manager.showInReport(ShowInReport.EXTENDED_REPORT), Manager.TRACE);
 			resource.createAnimation(p,  new Form(new Dimension(HEIGHT/2, HEIGHT/2)), true);
 			resources.add(resource);
 		}
 		neededResource=-1;
-		creationTime = new ContDistNormal(model, "Resource Creation Time", meanCreationTime, stDevCreationTime, true, true);
+		creationTime = new ContDistNormal(model, "Resource Erstellungsdauer", meanCreationTime, stDevCreationTime, Manager.showInReport(ShowInReport.MINIMAL_REPORT), Manager.TRACE);
 		creationTime.setNonNegative(true);
+		histo = new Histogram(model, "Konsumierte Ressourcen", 1.0, (double)types-1,types-2,Manager.showInReport(ShowInReport.MINIMAL_REPORT), Manager.TRACE);
 	}
 	
 	public TimeInstant consume(int resource){
 		CountAnimation res = resources.get(resource);
+		TimeInstant t;
 		if(res.getValue()>0){
 			res.update(-1);
+			histo.update(resource);
 			Queue<Cook> cooks = getDriveThrough().getCooks();
 			if(!cooks.isEmpty())
 				cooks.first().start();
-			return presentTime();
+			t = presentTime();
 		}else{
 			if(getDriveThrough().getCookingCooks().isEmpty()){
 				Cook c = getDriveThrough().getCooks().first();
 				c.start();
-				return c.getTimeWhenFinished();
+				t = c.getTimeWhenFinished();
 			}else{
 				Cook c = getCookWhoCooks(resource);
 				if(c!=null)
-					return c.getTimeWhenFinished();
+					t = c.getTimeWhenFinished();
 				else {
 					neededTime = creationTime.sampleTimeSpan();
 					TimeInstant timeWhenFinished = getDriveThrough().getCookingCooks().first().getTimeWhenFinished();
-					return new TimeInstant(timeWhenFinished.getTimeAsDouble() + neededTime.getTimeAsDouble());
+					t= new TimeInstant(timeWhenFinished.getTimeAsDouble() + neededTime.getTimeAsDouble());
 				}
 			}
 		}
+		double timeTillOpen = getDriveThrough().getTimeSpanTillOpen().getTimeAsDouble();
+		if(timeTillOpen!=0);
+			t = new TimeInstant(t.getTimeAsDouble()+timeTillOpen);
+		return t;
 	}
 
 	private Cook getCookWhoCooks(int resource) {
@@ -90,7 +100,12 @@ public class Resources extends Entity{
 			if(count.getValue()<min.getValue())
 				min = count;
 		min.update();
-		return new TimeInstant(creationTime.sampleTimeSpan(TimeUnit.SECONDS).getTimeAsDouble()+presentTime().getTimeAsDouble());
+		
+		double t = creationTime.sampleTimeSpan(TimeUnit.SECONDS).getTimeAsDouble()+presentTime().getTimeAsDouble();
+		double timeTillOpen = getDriveThrough().getTimeSpanTillOpen().getTimeAsDouble();
+		if(timeTillOpen!=0)
+			return	new TimeInstant(t+timeTillOpen);
+		return new TimeInstant(t);
 	}
 
 	public int getResourceToCook() {
@@ -123,7 +138,7 @@ public class Resources extends Entity{
 		if(neededResource>=0)
 			return true;
 		else for(CountAnimation re:resources)
-			if(re.getValue()<MAX_RESOURCE_COUNT)
+			if(re.getValue()<Manager.RESOURCE_LIMIT)
 				return true;
 		return false;
 	}

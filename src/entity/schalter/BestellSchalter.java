@@ -2,7 +2,6 @@ package entity.schalter;
 
 
 import model.DriveThrough;
-import model.State;
 import desmoj.core.simulator.TimeSpan;
 import desmoj.extensions.visualization2d.animation.Position;
 import desmoj.extensions.visualization2d.animation.internalTools.EntityTypeAnimation;
@@ -14,9 +13,9 @@ public class BestellSchalter extends Schalter {
 
 
 	public BestellSchalter(DriveThrough owner, String name,
-			State state, EntityTypeAnimation entity, Position pos, double mean,
+			EntityTypeAnimation entity, Position pos, double mean,
 			double stdDev, boolean horizontal, int length) {
-		super(owner, name, state, entity, pos, mean, stdDev, horizontal,
+		super(owner, name, entity, pos, mean, stdDev, horizontal,
 				length);
 	}
 
@@ -28,20 +27,20 @@ public class BestellSchalter extends Schalter {
 	
 	@Override
 	public void doAfterCarProcessed(Auto auto) {
-		getDriveThrough().getAusgabeShalter().insert(auto);
 		active = false;
-		if(!this.isEmpty())
-			this.start(queue.first());
+		AusgabeSchalter ausgabeShalter = getDriveThrough().getAusgabeShalter();
+		if(!ausgabeShalter.isFull()){	
+			ausgabeShalter.insert(auto);
+			if(!this.isEmpty())
+				this.start();
+		}
 	}
 	
-	
+
 	public void activate(){
 		if(!active)
 			if(!isEmpty()){
-				getDriveThrough().getAusgabeShalter().insert(queue.removeFirst());
-				if(!isEmpty()){
-					start(queue.first());
-				}
+				start();
 			}
 	}
 }

@@ -1,15 +1,16 @@
 package entity.schalter;
 
-import java.awt.Color;
+import java.util.Calendar;
 import java.util.concurrent.TimeUnit;
 
 import model.DriveThrough;
-import model.State;
+import model.Manager;
+import model.Manager.ShowInReport;
 import desmoj.core.dist.ContDistNormal;
 import desmoj.core.simulator.Entity;
 import desmoj.core.simulator.Event;
 import desmoj.core.simulator.TimeSpan;
-import desmoj.extensions.visualization2d.animation.BackgroundElementAnimation;
+import desmoj.core.statistic.Histogram;
 import desmoj.extensions.visualization2d.animation.Form;
 import desmoj.extensions.visualization2d.animation.FormExt;
 import desmoj.extensions.visualization2d.animation.Position;
@@ -20,30 +21,33 @@ import entity.car.Auto;
 
 public abstract class Schalter extends Entity{
 
-	protected QueueAnimation<Auto>			queue;
 	protected CountAnimation 				rejected;
 	protected ContDistNormal 				wartezeit;
-	
-	private static final String 			BASE = "SHALTER";
-	private static final String 			NAME = "SHALTER";
-	private static int 						width = 600;
+
+	private QueueAnimation<Auto>			queue;
 	private DriveThrough 					owner;
 	private Position 						position;
 	private ProcessEvent 					beginEvent;
-	public boolean targetIsFull; 
+	public boolean targetIsFull;
+	private static Histogram histo;
+	private int length; 
 	
 
-	public Schalter(DriveThrough owner, String name, State state,
+	public Schalter(DriveThrough owner, String name,
 			EntityTypeAnimation entity, Position pos, double mean, double stdDev, boolean bHorizontal, int length){
 		super(owner, name, true);
 		this.owner = owner;
 		this.position = pos;
+		this.length = length;
 		this.beginEvent = new ProcessEvent(name+"Event");
-		this.wartezeit = new ContDistNormal(owner, name+" Normalverteilung", mean, stdDev , true, true);
+		this.wartezeit = new ContDistNormal(owner, name+" Normalverteilung", mean, stdDev , Manager.showInReport(ShowInReport.EXTENDED_REPORT), Manager.TRACE);
 		wartezeit.setNonNegative(true);
 		initAnimation(bHorizontal, length, entity);
 	}
-
+	
+	public static void init(DriveThrough owner){
+		histo = new Histogram(owner, "Unzufriedene Kunden gesamt", Manager.OPENING,Manager.CLOSING,Manager.CLOSING-Manager.OPENING, Manager.showInReport(ShowInReport.MINIMAL_REPORT), Manager.TRACE);
+	}
 	/**
 	 * Perform action after time got consumed
 	 */
@@ -56,19 +60,21 @@ public abstract class Schalter extends Entity{
 	 */
 	public abstract TimeSpan process(Auto auto);
 	
-	public void start(Auto auto){
-		auto.stopWaiting();
-		beginEvent.schedule(auto, process(auto));
+	public void start(){
+		Auto auto = queue.first();
+		TimeSpan processTime = process(auto);
+			auto.stopWaiting();
+			beginEvent.schedule(auto, processTime);
 	}
-	
+
 	public boolean insert(Auto auto) {
 		auto.waitAt(this);
 		if(queue.isEmpty()){
 			queue.insert(auto);
-			start(auto);
+			start();
 			return true;
 		}
-		return 	queue.insert(auto);
+		return queue.insert(auto);
 	}
 	
 	protected Position getPosition() {
@@ -80,7 +86,8 @@ public abstract class Schalter extends Entity{
 	}
 	
 	public boolean isFull(){
-		return queue.maxLength()<=queue.size();
+		boolean b = length<=queue.size();
+		return b;
 	}
 	public String getName(){
 		return super.getName();
@@ -97,32 +104,25 @@ public abstract class Schalter extends Entity{
 
 		@Override
 		public void eventRoutine(Auto auto) {
-			queue.remove(auto);
+			if(queue.contains(auto))
+				queue.remove(auto);
 			doAfterCarProcessed(auto);				
 		}
 	}
 
 	
 	public void reject(Auto auto){
+		histo.update(presentTime().getTimeAsCalender().get(Calendar.HOUR_OF_DAY));
+		rejected.update();
 		if(queue.contains(auto))
 			queue.remove(auto);
-		rejected.update();
 		auto.disposeAnimation();
 	}
 	
 	private void initAnimation(boolean bHorizontal, int length, EntityTypeAnimation entity){
-		if(bHorizontal){
-			new BackgroundElementAnimation(
-				owner, BASE, NAME, null, 0, 0, 0, 100.0, position, new Form(
-						width, length*7), java.awt.Color.GRAY, Color.WHITE, true);
-		}else{
-			new BackgroundElementAnimation(
-					owner, BASE, NAME, null, 0, 0, 0, 100.0, position, new Form(
-							length*15, width-100), java.awt.Color.GRAY, Color.WHITE, true);
-		}
-		queue = new QueueAnimation<Auto>(owner, getName(), 0, length, true,true);
+		queue = new QueueAnimation<Auto>(owner, getName(), 0, length, Manager.showInReport(ShowInReport.MINIMAL_REPORT), Manager.TRACE);
 		queue.createAnimation(position, new FormExt(bHorizontal, length, entity.getId()), true);
-		rejected = new CountAnimation(owner, getName()+" rejected", true, true);
+		rejected = new CountAnimation(owner, "Kunde verlässt "+getName(), Manager.showInReport(ShowInReport.NORMAL_REPORT), Manager.TRACE);
 		rejected.createAnimation(
 				new Position(-350 + (int) Math.round(position.getPoint().getX()),
 						(int) Math.round(position.getPoint().getX())), new Form(20,

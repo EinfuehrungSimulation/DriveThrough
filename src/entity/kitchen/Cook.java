@@ -28,7 +28,7 @@ public class Cook extends Entity{
 		getDriveThrough().getCooks().remove(this);
 		getDriveThrough().getCookingCooks().insert(this);
 		if(timeWhenFinished.getTimeAsDouble()<=presentTime().getTimeAsDouble())
-			cookingEvent.eventRoutine();
+			cookingEvent.schedule(resources.generateResource(resources.getResourceToCook()));
 	}
 
 	private DriveThrough getDriveThrough() {
