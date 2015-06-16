@@ -57,10 +57,12 @@ public abstract class Schalter extends Entity{
 	public abstract TimeSpan process(Auto auto);
 	
 	public void start(Auto auto){
+		auto.stopWaiting();
 		beginEvent.schedule(auto, process(auto));
 	}
 	
 	public boolean insert(Auto auto) {
+		auto.waitAt(this);
 		if(queue.isEmpty()){
 			queue.insert(auto);
 			start(auto);
@@ -95,12 +97,15 @@ public abstract class Schalter extends Entity{
 
 		@Override
 		public void eventRoutine(Auto auto) {
+			queue.remove(auto);
 			doAfterCarProcessed(auto);				
 		}
 	}
 
 	
-	void reject(Auto auto){
+	public void reject(Auto auto){
+		if(queue.contains(auto))
+			queue.remove(auto);
 		rejected.update();
 		auto.disposeAnimation();
 	}
@@ -126,5 +131,9 @@ public abstract class Schalter extends Entity{
 
 	public TimeSpan getRndTime() {
 		return wartezeit.sampleTimeSpan(TimeUnit.SECONDS);
+	}
+
+	public boolean contains(Auto auto) {
+		return queue.contains(auto);
 	}
 }

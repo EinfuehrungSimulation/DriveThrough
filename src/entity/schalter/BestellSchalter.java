@@ -28,7 +28,6 @@ public class BestellSchalter extends Schalter {
 	
 	@Override
 	public void doAfterCarProcessed(Auto auto) {
-		queue.removeFirst();
 		getDriveThrough().getAusgabeShalter().insert(auto);
 		active = false;
 		if(!this.isEmpty())

@@ -9,6 +9,7 @@ import desmoj.core.dist.ContDistNormal;
 import desmoj.core.dist.DiscreteDistUniform;
 import desmoj.core.simulator.ExternalEvent;
 import desmoj.core.simulator.TimeSpan;
+import entity.schalter.BestellSchalter;
 
 
 public class AutoGenerator{
@@ -20,7 +21,7 @@ public class AutoGenerator{
 	private DiscreteDistUniform colorGenerator;
 	private ContDistNormal timeGenerator;
 	
-	private AutoTypeAnimation	auto;
+	private AutoTypeAnimation	autoType;
 	private String[] images;
 	private double mean;
 	private double standardDeviation;
@@ -29,21 +30,21 @@ public class AutoGenerator{
 		this.images = images;
 		this.mean = mean;
 		this.standardDeviation = standardDeviation;
-		auto = new AutoTypeAnimation("Auto",new State(CAR_NAME+0, CAR_NAME+0, images[0]));
+		autoType = new AutoTypeAnimation("Auto",new State(CAR_NAME+0, CAR_NAME+0, images[0]));
 		for(int i=1; i<images.length;i++){
-			auto.addState(new State(CAR_NAME+i, STATE_NAME+i, images[i]));
+			autoType.addState(new State(CAR_NAME+i, STATE_NAME+i, images[i]));
 		}
 	}
 	
 	public AutoTypeAnimation getEntity(){
-		return auto;
+		return autoType;
 	}
 	
 	public void init(DriveThrough owner) {
 		this.colorGenerator = new DiscreteDistUniform(owner, "ColorGenerator", 0, images.length-1, false, false);
 		this.timeGenerator=new ContDistNormal(owner, "Kunden Erstellung", mean, standardDeviation, true, true);
 		timeGenerator.setNonNegative(true);
-		auto.init(owner);
+		autoType.init(owner);
 	}
 
 	public void start(DriveThrough model) {
@@ -58,9 +59,12 @@ public class AutoGenerator{
 
 		@Override
 		public void eventRoutine() {
-			auto.init(getDriveThrough());
-			auto.setState(colorGenerator.sample().intValue());
-			getDriveThrough().getBestellShalter().insert(auto.create(getDriveThrough()));
+			autoType.init(getDriveThrough());
+			autoType.setState(colorGenerator.sample().intValue());
+			BestellSchalter bestellShalter = getDriveThrough().getBestellShalter();
+			Auto auto = autoType.create(getDriveThrough());
+			if(!bestellShalter.insert(auto))
+				bestellShalter.reject(auto);
 			TimeSpan time = timeGenerator.sampleTimeSpan(TimeUnit.SECONDS);
 			schedule(time);
 		}

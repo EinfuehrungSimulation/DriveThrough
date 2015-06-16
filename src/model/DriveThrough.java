@@ -47,6 +47,8 @@ public class DriveThrough extends ModelAnimation {
 	private static final String BESTELLSHALTER_IDLE_GIF = "schalter/schalter1_idle.gif";
 	private static final String AUSGABESHALTER_IDLE_GIF = "schalter/schalter2_idle.gif";
 	private static final String IDLE = "IDLE";
+	private static final double PATIENCE_STDV = 2;
+	private static final double PATIENCE_MEAN = 15;
 	
 
 	private static int WIDTH = 800;
@@ -95,7 +97,7 @@ public class DriveThrough extends ModelAnimation {
 
 	@Override
 	public void initAnimation() {
-		Auto.init(this, RESOURCE_COUNT);
+		Auto.init(this, RESOURCE_COUNT, PATIENCE_MEAN, PATIENCE_STDV);
 		new BackgroundElementAnimation(this, BASE, NAME, TEXT, 0, TEXT_SIZE, 0,
 				100.0, new Position(0, 0), new Form(WIDTH, HEIGHT), BG_COLOR,
 				FG_COLOR, true);

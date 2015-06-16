@@ -19,7 +19,6 @@ public class AusgabeSchalter extends Schalter {
 	@Override
 	public void doAfterCarProcessed(Auto auto) {
 		getDriveThrough().getBestellShalter().activate();
-		queue.removeFirst();
 		auto.disposeAnimation();
 		if(!this.isEmpty()){
 			start(queue.first());
