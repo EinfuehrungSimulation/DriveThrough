@@ -5,4 +5,4 @@
 \beamer@sectionintoc {3}{Was wurde getestet?}{5}{0}{3}
 \beamer@sectionintoc {4}{Was wurde Beobachtet?}{6}{0}{4}
 \beamer@sectionintoc {5}{Ergebnisse}{8}{0}{5}
-\beamer@sectionintoc {6}{Live - Demo}{12}{0}{6}
+\beamer@sectionintoc {6}{Live - Demo}{15}{0}{6}
