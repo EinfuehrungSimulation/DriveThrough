@@ -2,6 +2,7 @@ import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Locale;
+import java.util.Scanner;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
@@ -29,7 +30,11 @@ public class Main {
 		// erzeuge Modell und Experiment
 		DriveThrough model = new DriveThrough(cmdGen);
 		Experiment exp = new Experiment("DriveIn");
-		exp.setSeedGenerator(1234567890);
+		System.out.println("Bitte geben sie einen Seed-Wert ein:");
+		Scanner scanner = new Scanner(System.in);
+		int seed = scanner.nextInt();
+		scanner.close();
+		exp.setSeedGenerator(seed);
 		cmdGen.setStartStopTime(new TimeInstant(0, TimeUnit.HOURS), new TimeInstant(24, TimeUnit.HOURS), TimeZone.getDefault());
 		model.connectToExperiment(exp);
 
