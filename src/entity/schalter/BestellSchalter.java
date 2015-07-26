@@ -5,12 +5,17 @@ import model.DriveThrough;
 import desmoj.core.simulator.TimeSpan;
 import desmoj.extensions.visualization2d.animation.Position;
 import desmoj.extensions.visualization2d.animation.internalTools.EntityTypeAnimation;
-import entity.car.Auto;
+import entity.car.Customer;
 
-public class BestellSchalter extends Schalter {
+/**
+ * simple counter implementation. Informs the cars that they are now start waiting.
+ * @author sascha
+ *
+ */
+public class BestellSchalter extends Counter {
 	
 	private boolean active = false;
-	private Auto auto;
+	private Customer auto;
 
 
 	public BestellSchalter(DriveThrough owner, String name,
@@ -21,13 +26,13 @@ public class BestellSchalter extends Schalter {
 	}
 
 	@Override
-	public TimeSpan process(Auto auto) {
+	public TimeSpan process(Customer auto) {
 		active = true;
 		return getRndTime();
 	}
 	
 	@Override
-	public void doAfterCarProcessed(Auto auto) {
+	public void doAfterCarProcessed(Customer auto) {
 		active = false;
 		AusgabeSchalter ausgabeShalter = getDriveThrough().getAusgabeShalter();
 		if(!ausgabeShalter.isFull()){	
@@ -40,7 +45,7 @@ public class BestellSchalter extends Schalter {
 	}
 	
 
-	public Auto activate(){
+	public Customer activate(){
 		if(!active){
 			if(!isEmpty())
 				start();

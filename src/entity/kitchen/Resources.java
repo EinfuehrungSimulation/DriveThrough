@@ -17,7 +17,10 @@ import desmoj.core.statistic.Histogram;
 import desmoj.extensions.visualization2d.animation.Form;
 import desmoj.extensions.visualization2d.animation.Position;
 import desmoj.extensions.visualization2d.animation.core.statistic.CountAnimation;
-
+/**
+ * Resources are the meals that customers get. There may be arbitrary many resources 
+ * but all use the same distribution to calculate the time they need to get produced
+ */
 public class Resources extends Entity{
 
 	private static final int HEIGHT = 50;
@@ -50,7 +53,12 @@ public class Resources extends Entity{
 		histo = new Histogram(model, "Konsumierte Ressourcen", 1.0, (double)types-1,types-2,Manager.showInReport(ShowInReport.MINIMAL_REPORT), Manager.TRACE);
 		histo.setDescription("Ressouren die von Kunden konsumiert wurden");
 	}
-	
+	/**
+	 * Create a resource. Inform cooks that resource is consumed if there is one idle.
+	 * Also check if the Drive-Through is closed, so no resources are needed.
+	 * @param resource
+	 * @return the time the resource needs to be produced or 0 if there is one in stock
+	 */
 	public TimeInstant consume(int resource){
 		CountAnimation res = resources.get(resource);
 		res.update(-1);
@@ -83,7 +91,12 @@ public class Resources extends Entity{
 			t = new TimeInstant(t.getTimeAsDouble()+timeTillOpen);
 		return t;
 	}
-
+	
+	/**
+	 * get the cook who cooks the specified resource
+	 * @param resource
+	 * @return
+	 */
 	private Cook getCookWhoCooks(int resource) {
 		Cook cook =null;
 		for(Cook el:getDriveThrough().getCookingCooks())
@@ -98,7 +111,11 @@ public class Resources extends Entity{
 	private DriveThrough getDriveThrough() {
 		return (DriveThrough) getModel();
 	}
-
+	/**
+	 * generate a new resource
+	 * @param resource
+	 * @return the time that will be needed to cook the given resource
+	 */
 	public TimeInstant generateResource(int resource) {
 		if(neededResource>=0){
 			neededResource = -1;
@@ -123,7 +140,9 @@ public class Resources extends Entity{
 			return	new TimeInstant(t+timeTillOpen);
 		return new TimeInstant(t);
 	}
-
+	/**
+	 * @return the resource which is needed most to be cooked
+	 */
 	public int getResourceToCook() {
 		if(neededResource>=0)
 			return neededResource;
@@ -135,6 +154,11 @@ public class Resources extends Entity{
 		return res;
 	}
 
+	/**
+	 * calculate  the time that will be needed to cook the given resource
+	 * @param resource
+	 * @return
+	 */
 	public TimeInstant getTimeTilProducedRecource(int resource) {
 		Cook min=getDriveThrough().getCookingCooks().first();
 		for(Cook el: getDriveThrough().getCookingCooks()){
@@ -149,7 +173,11 @@ public class Resources extends Entity{
 	public TimeInstant getCookingDuration() {
 		return new TimeInstant(presentTime().getTimeAsDouble()+neededTime.getTimeAsDouble());
 	}
-
+	
+	/**
+	 * check if a customer is waiting for its order 
+	 * @return
+	 */
 	public boolean needsResourceToBeCooked() {
 		if(neededResource>=0)
 			return true;

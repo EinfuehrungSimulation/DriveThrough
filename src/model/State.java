@@ -1,6 +1,9 @@
 package model;
 
-
+/**
+ * class to store state information
+ *
+ */
 public class State{
 	
 	private final String NAME;

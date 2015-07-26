@@ -34,7 +34,10 @@ public class Cook extends Entity{
 	private DriveThrough getDriveThrough() {
 		return (DriveThrough) getModel();
 	}
-	
+	/**
+	 * Here are the ressources generated. If there is need for a special resource this is cooked, else one of the lowest is created
+	 *
+	 */
 	class CoockingEvent extends ExternalEvent{
 
 		public CoockingEvent() {
@@ -68,7 +71,6 @@ public class Cook extends Entity{
 	}
 
 	public int getResource() {
-		// TODO Auto-generated method stub
 		return resource;
 	}
 

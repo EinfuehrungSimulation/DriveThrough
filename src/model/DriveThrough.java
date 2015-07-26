@@ -15,24 +15,23 @@ import desmoj.extensions.visualization2d.animation.Form;
 import desmoj.extensions.visualization2d.animation.Position;
 import desmoj.extensions.visualization2d.animation.core.simulator.ModelAnimation;
 import desmoj.extensions.visualization2d.animation.internalTools.EntityTypeAnimation;
-import entity.car.Auto;
-import entity.car.AutoGenerator;
-import entity.car.AutoTypeAnimation;
+import entity.car.Customer;
+import entity.car.CustomerGenerator;
+import entity.car.Car;
 import entity.kitchen.Cook;
 import entity.kitchen.Resources;
 import entity.schalter.AusgabeSchalter;
 import entity.schalter.BestellSchalter;
-import entity.schalter.Schalter;
+import entity.schalter.Counter;
 import entity.schalter.WartePlatz;
 
 /**
- * Jede Kasse hat eine eigene Warteschlange
- * 
- * @author Christian
- * 
+ * Class that simulates a drive-through and kitchen.
+ * Also animates the waiting queues and resource stock
  */
 public class DriveThrough extends ModelAnimation {
 
+	//animation attributes
 	private static int WIDTH = 800;
 	private static int HEIGHT = 600;
 	private static int TEXT_SIZE = 20;
@@ -44,8 +43,9 @@ public class DriveThrough extends ModelAnimation {
 
 	String[] cars = { "cars/car1.png", "cars/car2.png", "cars/car3.png" };
 
+	//simulation attributes
 	private BestellSchalter bestellShalter;
-	private AutoGenerator generator;
+	private CustomerGenerator generator;
 	private AusgabeSchalter ausgabeShalter;
 	private Resources resources;
 	private Queue<Cook> waitingCooks;
@@ -64,13 +64,17 @@ public class DriveThrough extends ModelAnimation {
 		this.addIcon(Manager.AUSGABESCHALTER_ID,
 				Manager.AUSGABESHALTER_IDLE_GIF);
 
-		generator = new AutoGenerator(cars, Manager.TIME_SPANS,
+		generator = new CustomerGenerator(cars, Manager.TIME_SPANS,
 				Manager.TIME_SCALES, Manager.AUUTO_GENERATION_MEAN,
 				Manager.AUTO_GENERATION_STDV);
 		initEntityType(generator.getEntity());
 	}
 
-	public void initEntityType(AutoTypeAnimation entityType) {
+	/**
+	 * initializes custom animation types in a central place
+	 * @param entityType
+	 */
+	public void initEntityType(Car entityType) {
 		for (int i = 0; i < entityType.states(); i++) {
 			this.addIcon(entityType.getState(i).getImageID(), entityType
 					.getState(i).getImagePath());
@@ -82,7 +86,7 @@ public class DriveThrough extends ModelAnimation {
 	@Override
 	public void initAnimation() {
 
-		Auto.init(this, Manager.RESOURCE_COUNT, Manager.PATIENCE_MEAN,
+		Customer.init(this, Manager.RESOURCE_COUNT, Manager.PATIENCE_MEAN,
 				Manager.PATIENCE_STDV);
 		new BackgroundElementAnimation(this, BASE, NAME, TEXT, 0, TEXT_SIZE, 0,
 				100.0, new Position(0, 0), new Form(WIDTH, HEIGHT), BG_COLOR,
@@ -90,7 +94,7 @@ public class DriveThrough extends ModelAnimation {
 
 		initKitchen();
 
-		Schalter.init(this,"Unzufriedene Kunden", new Position(-100, 0));
+		Counter.init(this,"Unzufriedene Kunden", new Position(-100, 0));
 		
 		wartePlatz = new WartePlatz(this, "Warteplatz", generator.getEntity()
 				.getEntityTypeAnimation(), new Position(-150, -150), Manager.WARTEPLATZ_DAUER_MEAN, Manager.WARTEPLATZ_DAUER_STDV,
@@ -108,6 +112,9 @@ public class DriveThrough extends ModelAnimation {
 		generator.init(this);
 	}
 
+	/**
+	 * Init classes needed for resource generation 
+	 */
 	private void initKitchen() {
 		resources = new Resources(this, new Position(WIDTH / 2-50, -HEIGHT / 2),
 				Manager.RESOURCE_COUNT, Manager.RESOURCE_CREATION_TIME_MEAN,

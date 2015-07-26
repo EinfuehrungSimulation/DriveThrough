@@ -5,9 +5,9 @@ import desmoj.core.simulator.TimeInstant;
 import desmoj.core.simulator.TimeSpan;
 import desmoj.extensions.visualization2d.animation.Position;
 import desmoj.extensions.visualization2d.animation.internalTools.EntityTypeAnimation;
-import entity.car.Auto;
+import entity.car.Customer;
 
-public class WartePlatz extends Schalter{
+public class WartePlatz extends Counter{
 
 	public WartePlatz(DriveThrough owner, String name,
 			EntityTypeAnimation entity, Position pos, double mean,
@@ -16,7 +16,7 @@ public class WartePlatz extends Schalter{
 	}
 
 	@Override
-	public void doAfterCarProcessed(Auto auto) {
+	public void doAfterCarProcessed(Customer auto) {
 		 if(auto!=null)
 			 auto.disposeAnimation();
 		 if(!this.isEmpty()){
@@ -25,7 +25,7 @@ public class WartePlatz extends Schalter{
 	}
 
 	@Override
-	public TimeSpan process(Auto auto) {
+	public TimeSpan process(Customer auto) {
 		TimeInstant consumationTime = getDriveThrough().getResources().consume(auto.getOrder());
 		TimeInstant processingTime = new TimeInstant(getRndTime().getTimeAsDouble()+presentTime().getTimeAsDouble());
 		consumationTime = new TimeInstant(Math.max(consumationTime.getTimeAsDouble(), processingTime.getTimeAsDouble()));

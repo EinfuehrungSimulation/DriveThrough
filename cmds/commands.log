@@ -5,7 +5,7 @@ command: createModelBasisData
          parameter  : ProjectIconId possibleCounts: 0..1 values: DESMO-J, 
          parameter  : ModelName possibleCounts: 1..1 values: Drive In, 
          parameter  : ModelAuthor possibleCounts: 1..1 values: Sascha Wernegger, 
-         parameter  : ModelDate possibleCounts: 0..1 values: Wed Jun 17 00 29 55 CEST 2015, 
+         parameter  : ModelDate possibleCounts: 0..1 values: Sun Jul 26 09 58 24 CEST 2015, 
          parameter  : ModelDescription possibleCounts: 0..1 values: Model of a Drive In, 
          parameter  : ModelRemark possibleCounts: 0..inf values: 
          parameter  : ModelLicense possibleCounts: 0..1 values: 

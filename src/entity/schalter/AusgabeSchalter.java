@@ -5,9 +5,12 @@ import desmoj.core.simulator.TimeInstant;
 import desmoj.core.simulator.TimeSpan;
 import desmoj.extensions.visualization2d.animation.Position;
 import desmoj.extensions.visualization2d.animation.internalTools.EntityTypeAnimation;
-import entity.car.Auto;
+import entity.car.Customer;
 
-public class AusgabeSchalter extends Schalter {
+/**
+ * A counter that can block his predecessor and may not process a customer and instead add him to a holding area
+ */
+public class AusgabeSchalter extends Counter {
 
 	private boolean haveToWait = false;
 
@@ -20,13 +23,13 @@ public class AusgabeSchalter extends Schalter {
 	
 	
 	@Override
-	public void doAfterCarProcessed(Auto auto) {
+	public void doAfterCarProcessed(Customer auto) {
 		if(haveToWait){
 			haveToWait = false;
 			getDriveThrough().getWartePlatz().insert(auto);
 		}else if(auto!=null)
 			auto.disposeAnimation();
-		Auto a = getDriveThrough().getBestellShalter().activate();
+		Customer a = getDriveThrough().getBestellShalter().activate();
 		if(a!=null&&!contains(a))
 			insert(a);
 		if(!this.isEmpty()){
@@ -35,7 +38,7 @@ public class AusgabeSchalter extends Schalter {
 	}
 	
 	@Override
-	public TimeSpan process(Auto auto) {
+	public TimeSpan process(Customer auto) {
 		int resource = auto.getOrder();
 		TimeInstant consumationTime = getDriveThrough().getResources().consume(resource);
 		if(consumationTime.getTimeAsDouble()>presentTime().getTimeAsDouble())
